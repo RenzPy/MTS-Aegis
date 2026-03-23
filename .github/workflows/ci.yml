@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  # ── Bash syntax validation ──────────────────────────────────────────────────
+  bash-lint:
+    name: Bash Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check bash syntax — installer
+        run: bash -n installer/install_aegis.sh
+
+      - name: Check bash syntax — hardening
+        run: bash -n hardening/aegis-harden.sh
+
+      - name: Check bash syntax — detect-ports
+        run: bash -n tools/aegis-detect-ports
+
+      - name: Check bash syntax — engine scripts
+        run: |
+          bash -n installer/usbscan.sh
+          bash -n installer/usbcopy.sh
+          bash -n installer/usbformat.sh
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Shellcheck — installer scripts
+        run: |
+          shellcheck -S warning installer/usbscan.sh   || true
+          shellcheck -S warning installer/usbcopy.sh   || true
+          shellcheck -S warning installer/usbformat.sh || true
+          shellcheck -S warning tools/aegis-detect-ports || true
+
+  # ── Python syntax validation ────────────────────────────────────────────────
+  python-lint:
+    name: Python Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Python syntax — webui.py
+        run: python3 -c "import ast; ast.parse(open('installer/webui.py').read()); print('OK')"
+
+  # ── Secret scanning — never commit keys or IPs ─────────────────────────────
+  secret-scan:
+    name: Secret & Sensitive Data Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for private key material
+        run: |
+          echo "Scanning for private key headers..."
+          if grep -r "BEGIN OPENSSH PRIVATE KEY\|BEGIN RSA PRIVATE KEY\|BEGIN EC PRIVATE KEY" \
+              --include="*.sh" --include="*.py" --include="*.ps1" \
+              --include="*.bat" --include="*.conf" --include="scanner_id" \
+              . 2>/dev/null; then
+            echo "FAIL: Private key material found in repository!"
+            exit 1
+          fi
+          echo "OK: No private keys found."
+
+      - name: Scan for hardcoded private IPs
+        run: |
+          echo "Scanning for hardcoded private IP addresses..."
+          # Allow IPs only in docs and example files, not in scripts
+          if grep -rE '(192\.168\.[0-9]+\.[0-9]+|10\.[0-9]+\.[0-9]+\.[0-9]+|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]+\.[0-9]+)' \
+              --include="*.sh" --include="*.py" --include="*.ps1" \
+              --include="*.bat" \
+              . 2>/dev/null; then
+            echo "FAIL: Hardcoded private IP address found in script!"
+            echo "Use variables or configuration files instead."
+            exit 1
+          fi
+          echo "OK: No hardcoded IPs found."
+
+      - name: Check scanner_id is not committed
+        run: |
+          if [ -f "launcher/Config/scanner_id" ]; then
+            echo "FAIL: scanner_id key file is committed to the repository!"
+            echo "Remove it immediately and rotate the key."
+            exit 1
+          fi
+          echo "OK: No scanner_id key file present."
+
+  # ── PowerShell syntax validation ────────────────────────────────────────────
+  powershell-lint:
+    name: PowerShell Syntax Check
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check PowerShell syntax
+        shell: pwsh
+        run: |
+          $errors = $null
+          $null = [System.Management.Automation.Language.Parser]::ParseFile(
+            "${{ github.workspace }}\launcher\Launch_Aegis.ps1",
+            [ref]$null,
+            [ref]$errors
+          )
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host "OK: No syntax errors found."
+
+  # ── Payload integrity check ─────────────────────────────────────────────────
+  payload-integrity:
+    name: Installer Payload Integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify embedded payloads decode correctly
+        run: |
+          python3 - << 'PYEOF'
+          import re, base64, sys
+
+          src = open('installer/install_aegis.sh').read()
+          pattern = r"cat << '(\w+_B64)' \| base64 -d > ([^\n]+)\n(.*?)\n\1"
+          matches = re.findall(pattern, src, re.DOTALL)
+
+          if len(matches) != 5:
+              print(f"FAIL: Expected 5 embedded payloads, found {len(matches)}")
+              sys.exit(1)
+
+          for marker, dest, b64 in matches:
+              try:
+                  decoded = base64.b64decode(b64.strip())
+                  print(f"OK  {marker}: {len(decoded)} bytes -> {dest.strip()}")
+              except Exception as e:
+                  print(f"FAIL {marker}: base64 decode error: {e}")
+                  sys.exit(1)
+
+          print(f"\nAll {len(matches)} payloads decode successfully.")
+          PYEOF

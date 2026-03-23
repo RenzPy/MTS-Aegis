@@ -1,0 +1,29 @@
+# ── SSH Keys — NEVER commit these ────────────────────────────────────────────
+launcher/Config/scanner_id
+launcher/Config/scanner_id.*
+**/*_id_rsa
+**/*_id_ed25519
+**/*.pem
+**/*.key
+**/*.ppk
+
+# ── Generated configs with real IPs/paths ────────────────────────────────────
+aegis.conf
+launcher/Config/aegis_launcher.conf
+
+# ── Runtime files ─────────────────────────────────────────────────────────────
+/opt/usbscan/logs/
+*.log
+*.lock
+
+# ── OS junk ───────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+
+# ── Editor ────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
