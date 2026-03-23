@@ -1,6 +1,6 @@
 # MTS Aegis — USB Threat Analysis System
 
-![CI](https://github.com/YOUR_USERNAME/mts-aegis/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/renzpy/mts-aegis/actions/workflows/ci.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Ubuntu%2022.04%20%7C%2024.04-orange)
 ![Client](https://img.shields.io/badge/client-Windows%2010%2F11-0078D4)
