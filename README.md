@@ -41,7 +41,7 @@ All components communicate through the local filesystem only. No network calls d
 **Appliance (server):**
 - Ubuntu 22.04 or 24.04 LTS (bare metal recommended)
 - Intel or AMD x86_64 (also works on Raspberry Pi 4/5 with ARM)
-- 2 USB ports (Type-A for scan, Type-C for clean destination)
+- 2 USB ports + required (One for scan, one for clean destination)
 - 4GB+ storage for ClamAV signature databases
 
 **Client (Windows):**
