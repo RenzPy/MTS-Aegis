@@ -1,6 +1,6 @@
 # MTS Aegis — USB Threat Analysis System
 
-![CI](https://github.com/YOUR_USERNAME/mts-aegis/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/renzpy/mts-aegis/actions/workflows/ci.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Ubuntu%2022.04%20%7C%2024.04-orange)
 ![Client](https://img.shields.io/badge/client-Windows%2010%2F11-0078D4)
@@ -41,7 +41,7 @@ All components communicate through the local filesystem only. No network calls d
 **Appliance (server):**
 - Ubuntu 22.04 or 24.04 LTS (bare metal recommended)
 - Intel or AMD x86_64 (also works on Raspberry Pi 4/5 with ARM)
-- 2 USB ports (Type-A for scan, Type-C for clean destination)
+- 2 USB ports + required (One for scan, one for clean destination)
 - 4GB+ storage for ClamAV signature databases
 
 **Client (Windows):**
