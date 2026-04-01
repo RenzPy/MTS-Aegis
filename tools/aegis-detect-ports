@@ -86,7 +86,7 @@ list_usb_paths() {
     # Returns lines of: /dev/disk/by-path/<pci-path>  ->  /dev/sdX
     # Filtered to USB-attached block devices only
     find /dev/disk/by-path/ -maxdepth 1 -type l 2>/dev/null \
-        | grep -E 'usb.*scsi.*[^0-9p]$' \
+        | grep -E 'usb.*scsi' | grep -v '\-part' \
         | while read -r link; do
             target=$(readlink -f "$link")
             id="${link#/dev/disk/by-path/}"
@@ -97,7 +97,7 @@ list_usb_paths() {
 # ── Helper: snapshot current USB PCI IDs ─────────────────────────────────────
 snapshot_ids() {
     find /dev/disk/by-path/ -maxdepth 1 -type l 2>/dev/null \
-        | grep -E 'usb.*scsi.*[^0-9p]$' \
+        | grep -E 'usb.*scsi' | grep -v '\-part' \
         | xargs -I{} basename {} \
         | sort
 }
